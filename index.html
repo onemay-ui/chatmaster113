@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>113統測英文 - 對話題互動練習 WebApp</title>
+    <style>
+        :root {
+            --primary-color: #2b5876;
+            --secondary-color: #4e4376;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --correct-color: #28a745;
+            --wrong-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 650px;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin: 0 0 5px 0;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .dialogue-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .line {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .blank {
+            display: inline-block;
+            border-bottom: 2px solid var(--primary-color);
+            padding: 0 10px;
+            font-weight: bold;
+            color: #d9534f;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-option {
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-option:hover {
+            border-color: var(--primary-color);
+            background-color: #f0f4f8;
+        }
+
+        .btn-option.correct {
+            background-color: #d4edda;
+            border-color: var(--correct-color);
+            color: #155724;
+        }
+
+        .btn-option.wrong {
+            background-color: #f8d7da;
+            border-color: var(--wrong-color);
+            color: #721c24;
+        }
+
+        .explanation {
+            display: none;
+            background-color: #e8f4f8;
+            border: 1px solid #bce8f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #31708f;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-action {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-action:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .score-board {
+            text-align: center;
+            display: none;
+        }
+
+        .score-board h2 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>113 學年度統測英文對話題練習</h1>
+        <p>題號：<span id="current-question-num">11</span> / 20</p>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <div id="quiz-section">
+        <div class="dialogue-box" id="dialogue-box">
+            <!-- 對話內容區域 -->
+        </div>
+
+        <div class="options" id="options-box">
+            <!-- 選項按鈕區域 -->
+        </div>
+
+        <div class="explanation" id="explanation-box">
+            <!-- 解析說明區域 -->
+        </div>
+
+        <div class="controls">
+            <button class="btn-action" id="toggle-translation-btn" onclick="toggleTranslation()">顯示/隱藏 中文翻譯</button>
+            <button class="btn-action" id="next-btn" onclick="nextQuestion()" disabled>下一題</button>
+        </div>
+    </div>
+
+    <div class="score-board" id="score-section">
+        <h2>測驗完成！</h2>
+        <p>您的得分：<span id="final-score">0</span> / 100 分</p>
+        <button class="btn-action" onclick="restartQuiz()">重新練習</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            num: 11,
+            dialogue: [
+                { speaker: "Customer", en: "I'd like to have one oyster omelette and fried noodles, please.", zh: "我想要一份蚵仔煎和炒麵，謝謝。" },
+                { speaker: "Stall owner", en: "Ok. Your order will be ready in five minutes.", zh: "好的。您的訂單五分鐘後就會準備好。" },
+                { speaker: "Customer", en: "I can't use chopsticks. Can I have a fork, please?", zh: "我不會用筷子。能給我叉子嗎？" },
+                { speaker: "Stall owner", en: "[ ___ ]", zh: "[ ___ ]" },
+                { speaker: "Customer", en: "Thank you.", zh: "謝謝。" }
+            ],
+            options: [
+                "(A) You're very welcome.",
+                "(B) Of course, here you go.",
+                "(C) Oyster is also delicious.",
+                "(D) Sure, we have instant noodles."
+            ],
+            answer: 1, // Index (B)
+            explanation: "顧客詢問「能給我叉子嗎？」，攤販正面回應「當然，這裡給你。」最適當。(答案為 B)"
+        },
+        {
+            num: 12,
+            dialogue: [
+                { speaker: "Tina", en: "An old friend is coming to visit me tomorrow. I haven't seen him for ten years.", zh: "明天一位老朋友要來拜訪我。我已經十年沒見到他了。" },
+                { speaker: "Mike", en: "An old friend? [ ___ ]", zh: "一位老朋友？[ ___ ]" },
+                { speaker: "Tina", en: "He wants to tell me something about his girlfriend. They broke up!", zh: "他想告訴我一些關於他女朋友的事情。他們分手了！" },
+                { speaker: "Mike", en: "Sorry for him.", zh: "為他感到抱歉。" }
+            ],
+            options: [
+                "(A) How old is he?",
+                "(B) Why is he coming?",
+                "(C) When will you see him?",
+                "(D) Who was he looking for?"
+            ],
+            answer: 1, // Index (B)
+            explanation: "根據 Tina 回應「他想告訴我關於他女朋友的事…」，可知 Mike 詢問了「他為什麼要來？」。(答案為 B)"
+        },
+        {
+            num: 13,
+            dialogue: [
+                { speaker: "Mrs. Chen", en: "I heard that the new neighbors moved in yesterday.", zh: "我聽說新鄰居昨天搬進來了。" },
+                { speaker: "Mr. Chen", en:"[ ___ ]", zh: "[ ___ ]" },
+                { speaker: "Mrs. Chen", en: "No, not yet. What do they look like?", zh: "不是，還沒有。他們長什麼樣子？" },
+                { speaker: "Mr. Chen", en: "The lady is tall and thin and the man is kind of chubby.", zh: "那位女士高高瘦瘦，男士有點胖胖的。" }
+            ],
+            options: [
+                "(A) I'm glad I just met them.",
+                "(B) The neighbors have two cats.",
+                "(C) They ran a small business here.",
+                "(D) I thought you've met them already."
+            ],
+            answer: 3, // Index (D)
+            explanation: " Mrs. Chen 回答「不，還沒」，可知前一句提問或推測是「我以為你已經見過他們了」。(答案為 D)"
+        },
+        {
+            num: 14,
+            dialogue: [
+                { speaker: "Adam", en: "We all know that the Wright brothers flew the first airplane in 1903. But do you know which one of them flew the airplane?", zh: "我們都知道萊特兄弟在1903年飛了第一架飛機。但你知道他們兩個哪一個飛了飛機嗎？" },
+                { speaker: "Jacky", en: "The older brother did.", zh: "是哥哥飛的。" },
+                { speaker: "Adam", en: "I'm surprised you know that. OK. [ ___ ]", zh: "我很驚訝你知道這個。好的。[ ___ ]" },
+                { speaker: "Jacky", en: "Only about 12 seconds.", zh: "大約只有 12 秒。" },
+                { speaker: "Adam", en: "Wow, you really know a lot!", zh: "哇，你真的知道很多！" }
+            ],
+            options: [
+                "(A) How long was the flight?",
+                "(B) How old was his brother?",
+                "(C) How many times had he tried before?",
+                "(D) How far did the airplane actually fly?"
+            ],
+            answer: 0, // Index (A)
+            explanation: "Jacky 回答「只有大約12秒」，可知詢問的是飛行「時間有多長」。(答案為 A)"
+        },
+        {
+            num: 15,
+            dialogue: [
+                { speaker: "Amy", en: "Did you finish your report for the Performing Arts class?", zh: "你完成了表演藝術課的報告嗎？" },
+                { speaker: "Janet", en: "Yes. [ ___ ]", zh: "是的。[ ___ ]" },
+                { speaker: "Amy", en: "Like what?", zh: "像什麼？" },
+                { speaker: "Janet", en: "For example, women were not allowed to act on stage in the past.", zh: "例如，過去不允許女性在舞台上演出。" },
+                { speaker: "Amy", en: "That was really unfair, wasn't it?", zh: "那真的很不公平，對吧？" }
+            ],
+            options: [
+                "(A) But I haven't given it to Professor Johnson.",
+                "(B) And I've read many books about famous artists.",
+                "(C) But I'm not sure if my mom allows me to act on stage.",
+                "(D) And I've gathered a lot of information about the theater."
+            ],
+            answer: 3, // Index (D)
+            explanation: "Amy 接著問「像什麼？」，Janet 舉例劇場規則，可知前面 Janet 補充了「我收集了很多關於劇場的資訊」。(答案為 D)"
+        },
+        {
+            num: 16,
+            dialogue: [
+                { speaker: "Rita", en: "Why did you apply for this position?", zh: "你為什麼申請這個職位？" },
+                { speaker: "Ben", en: "I'd like to work for a large company. Your company is the perfect fit for me.", zh: "我想在一家大公司工作。你們公司對我來說是完美的選擇。" },
+                { speaker: "Rita", en: "In this position, you'll have to lead a small team. How have you shown leadership at your other jobs?", zh: "在這個職位上，你將不得不帶領一個小團隊。你在其他工作中如何展示領導能力？" },
+                { speaker: "Ben", en: "[ ___ ]", zh: "[ ___ ]" },
+                { speaker: "Rita", en: "That's good.", zh: "那很好。" }
+            ],
+            options: [
+                "(A) I worked for my team leader in the past ten years.",
+                "(B) I'd like to apply for a perfect job in a smaller team.",
+                "(C) From now on, I'll lead a team in this large company.",
+                "(D) At my current position, I manage a team of ten workers."
+            ],
+            answer: 3, // Index (D)
+            explanation: "面試官詢問如何在其他工作中展示領導能力，回答「在我目前的職位上，我管理一個 10 人的團隊」最為適切。(答案為 D)"
+        },
+        {
+            num: 17,
+            dialogue: [
+                { speaker: "Sue", en: "How's the project going?", zh: "這個專案進展如何？" },
+                { speaker: "Eric", en: "It's going well.", zh: "進展得很順利。" },
+                { speaker: "Sue", en: "Oh, good. [ ___ ]", zh: "哦，太好了。[ ___ ]" },
+                { speaker: "Eric", en: "They are great, and they have a lot of creative ideas.", zh: "他們很棒，而且他們有很多創意的想法。" },
+                { speaker: "Sue", en: "I'm happy to hear that.", zh: "聽到這個我很高興。" }
+            ],
+            options: [
+                "(A) But who is not feeling well?",
+                "(B) But how did they come to the office?",
+                "(C) And what are the new colleagues like?",
+                "(D) And when will the project be created?"
+            ],
+            answer: 2, // Index (C)
+            explanation: "Eric 回答「他們很棒，很有創意」，可知 Sue 詢問了「新同事長怎樣/個性如何？」。(答案為 C)"
+        },
+        {
+            num: 18,
+            dialogue: [
+                { speaker: "Jason", en: "Where are you? The presentation is about to begin.", zh: "你在哪裡？簡報即將開始了。" },
+                { speaker: "Susan", en: "I'm almost there. The traffic is terrible this morning.", zh: "我快到了。今天早上交通很糟糕。" },
+                { speaker: "Jason", en: "[ ___ ]", zh: "[ ___ ]" },
+                { speaker: "Susan", en: "Yes, please. You can make a start, and I can handle the rest of the slides myself.", zh: "好的，麻煩你了。你可以先開始，我自己處理剩下的簡報頁數。" }
+            ],
+            options: [
+                "(A) Do you want me to cancel the presentation?",
+                "(B) Would you like me to order snacks and drinks?",
+                "(C) Do you want me to introduce the first few pages?",
+                "(D) Would you like me to turn off the audio equipment?"
+            ],
+            answer: 2, // Index (C)
+            explanation: "Susan 回答「好的，你可以先開始，我之後接手」，可知 Jason 詢問的是「要我先介紹前幾頁嗎？」。(答案為 C)"
+        },
+        {
+            num: 19,
+            dialogue: [
+                { speaker: "Student", en: "Sir, we are raising money to help save the rainforest. Would you like to donate some money?", zh: "先生，我們正在籌集資金幫助拯救雨林。您想捐一些錢嗎？" },
+                { speaker: "Man", en: "Are you kidding? [ ___ ] It doesn't affect me!", zh: "你在開玩笑嗎？[ ___ ] 這對我沒有影響！" },
+                { speaker: "Student", en: "Well, sir, rainforests are very important to us. Many things we use are made from rainforest plants, such as the clothes we wear.", zh: "嗯，先生，雨林對我們很重要。我們使用的許多東西都是由雨林植物製成的，比如我們穿的衣服。" },
+                { speaker: "Man", en: "Oh, I see. Young man, I'll donate NT$ 500.", zh: "哦，我明白了。年輕人，我捐500新台幣。" }
+            ],
+            options: [
+                "(A) I'll never save the rain!",
+                "(B) I won't take your money.",
+                "(C) What is your favorite clothing style?",
+                "(D) Why do I have to save the rainforest?"
+            ],
+            answer: 3, // Index (D)
+            explanation: "男子問「為什麼我要拯救雨林？這又影響不到我」，學生才解釋雨林對生活物品的重要性。(答案為 D)"
+        },
+        {
+            num: 20,
+            dialogue: [
+                { speaker: "Jack", en: "I got a text message from the hotel. They ask us to click on a link to confirm our reservation.", zh: "我收到飯店的簡訊。他們要我們點擊連結確認預訂。" },
+                { speaker: "Lucy", en: "This message seems strange.", zh: "這條訊息看起來很奇怪。" },
+                { speaker: "Jack", en: "But could it be a new policy? I'm afraid our reservation would be cancelled.", zh: "但這可能是一項新政策吧？我擔心我們的預訂會被取消。" },
+                { speaker: "Lucy", en: "[ ___ ] Let me call the hotel. It's better to be safe than sorry.", zh: "[ ___ ] 讓我給飯店打個電話。安全第一（小心駛得萬年船）。" }
+            ],
+            options: [
+                "(A) Hey, don't do that.",
+                "(B) Just click on it now.",
+                "(C) Absolutely, go ahead.",
+                "(D) It's a standard procedure."
+            ],
+            answer: 0, // Index (A)
+            explanation: "Lucy 認為訊息奇怪並決定打電話確認，因此制止 Jack 點擊連結，說「嘿，別那樣做」。(答案為 A)"
+        }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let showZh = false;
+    let selectedOption = null;
+
+    function loadQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById("current-question-num").innerText = q.num;
+        document.getElementById("progress").style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+        
+        // Render Dialogue
+        const dialogueBox = document.getElementById("dialogue-box");
+        dialogueBox.innerHTML = "";
+        q.dialogue.forEach(line => {
+            const div = document.createElement("div");
+            div.className = "line";
+            div.innerHTML = `<span class="speaker">${line.speaker}:</span> ${line.en} ${showZh ? `<br><small style="color:#666">${line.zh}</small>` : ''}`;
+            dialogueBox.appendChild(div);
+        });
+
+        // Render Options
+        const optionsBox = document.getElementById("options-box");
+        optionsBox.innerHTML = "";
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement("button");
+            btn.className = "btn-option";
+            btn.innerText = opt;
+            btn.onclick = () => selectOption(idx);
+            optionsBox.appendChild(btn);
+        });
+
+        // Hide explanation & disable Next
+        document.getElementById("explanation-box").style.display = "none";
+        document.getElementById("next-btn").disabled = true;
+        selectedOption = null;
+    }
+
+    function selectOption(idx) {
+        if (selectedOption !== null) return; // Prevent changing after selection
+        selectedOption = idx;
+
+        const q = quizData[currentIdx];
+        const buttons = document.querySelectorAll(".btn-option");
+
+        if (idx === q.answer) {
+            buttons[idx].classList.add("correct");
+            score += 10;
+        } else {
+            buttons[idx].classList.add("wrong");
+            buttons[q.answer].classList.add("correct");
+        }
+
+        const expBox = document.getElementById("explanation-box");
+        expBox.innerHTML = `<strong>解析：</strong> ${q.explanation}`;
+        expBox.style.display = "block";
+
+        document.getElementById("next-btn").disabled = false;
+    }
+
+    function toggleTranslation() {
+        showZh = !showZh;
+        loadQuestion();
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            loadQuestion();
+        } else {
+            showScore();
+        }
+    }
+
+    function showScore() {
+        document.getElementById("quiz-section").style.display = "none";
+        document.getElementById("score-section").style.display = "block";
+        document.getElementById("final-score").innerText = score;
+    }
+
+    function restartQuiz() {
+        currentIdx = 0;
+        score = 0;
+        document.getElementById("quiz-section").style.display = "block";
+        document.getElementById("score-section").style.display = "none";
+        loadQuestion();
+    }
+
+    // Initialize App
+    loadQuestion();
+</script>
+
+</body>
+</html>
